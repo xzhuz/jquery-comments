@@ -785,3 +785,29 @@ http://viima.github.io/jquery-comments/*/
 .jquery-comments.read-only .actions {
 	display: none;
 }
+
+.comment-auditing {
+	border-radius: 4px;
+	padding: 8px 16px;
+	/*background-color: #f44336;*/
+	color: #fff;
+	font-size: 12px;
+	opacity: 1;
+	-webkit-transition: opacity .6s;
+	transition: opacity .6s;
+	margin-bottom: 15px;
+	background-color: #2196f3;
+	display: inline-block;
+}
+
+.comment-auditing .closebtn {
+	margin-left: 15px;
+	color: #fff;
+	font-weight: 700;
+	float: right;
+	font-size: 22px;
+	line-height: 16px;
+	cursor: pointer;
+	-webkit-transition: .3s;
+	transition: .3s;
+}

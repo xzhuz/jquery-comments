@@ -154,11 +154,11 @@
                 // Functionalities
                 enableReplying: true,
                 enableEditing: true,
-                enableUpvoting: true,
-                enableDeleting: true,
+                enableUpvoting: false,
+                enableDeleting: false,
                 enableAttachments: false,
                 enableHashtags: false,
-                enablePinging: false,
+                enablePinging: true,
                 enableDeletingCommentWithReplies: false,
                 enableNavigation: true,
                 postCommentOnEnter: false,
@@ -197,7 +197,7 @@
 
                 searchUsers: function(term, success, error) {success([])},
                 getComments: function(success, error) {success([])},
-                postComment: function(commentJSON, success, error) {success(commentJSON)},
+                postComment: function(commentJSON, success, error, audit) {success(commentJSON)},
                 putComment: function(commentJSON, success, error) {success(commentJSON)},
                 deleteComment: function(commentJSON, success, error) {success()},
                 upvoteComment: function(commentJSON, success, error) {success(commentJSON)},
@@ -208,7 +208,7 @@
                 timeFormatter: function(time) {return new Date(time).toLocaleDateString()}
             }
         },
-     
+
         // Initialization
         // ==============
 
@@ -340,10 +340,12 @@
         },
 
         addCommentToDataModel: function(commentModel) {
+            // 处理子评论
             if(!(commentModel.id in this.commentsById)) {
                 this.commentsById[commentModel.id] = commentModel;
                 // Update child array of the parent (append childs to the array of outer most parent)
                 if(commentModel.parent) {
+                    // 获取父评论
                     var outermostParent = this.getOutermostParent(commentModel.parent);
                     outermostParent.childs.push(commentModel.id);
                 }
@@ -365,7 +367,7 @@
 
             // Create comments and attachments
             this.createComments();
-            if(this.options.enableAttachments && this.options.enableNavigation) this.createAttachments();
+            // if(this.options.enableAttachments && this.options.enableNavigation) this.createAttachments();
 
             // Remove spinner
             this.$el.find('> .spinner').remove();
@@ -745,7 +747,7 @@
 
                 // Select correct commenting field
                 var commentingField;
-                var parentCommentingField = $(ev.target).parents('.commenting-field').first(); 
+                var parentCommentingField = $(ev.target).parents('.commenting-field').first();
                 if(parentCommentingField.length) {
                     commentingField = parentCommentingField;
                 }
@@ -949,8 +951,10 @@
             // Reverse mapping
             commentJSON = this.applyExternalMappings(commentJSON);
 
-            var success = function(commentJSON) {
-                self.createComment(commentJSON);
+            var success = function (commentJSON, isAuditing) {
+                if (!isAuditing) {
+                    self.createComment(commentJSON);
+                }
                 commentingField.find('.close').trigger('click');
 
                 // Reset button state
@@ -962,7 +966,12 @@
                 self.setButtonState(sendButton, true, false);
             };
 
-            this.options.postComment(commentJSON, success, error);
+            var audit = function (commentJSON) {
+                $('p').remove('.comment-auditing')
+                $('.textarea-wrapper').append(`<p class="comment-auditing"><span class="closebtn" onclick="$('p').remove('.comment-auditing')">×</span>您的评论已经投递至博主，等待博主审核！</p>`)
+            };
+
+            this.options.postComment(commentJSON, success, error, audit);
         },
 
         createComment: function(commentJSON) {
@@ -1285,7 +1294,7 @@
             noComments.prepend($('<br/>')).prepend(noCommentsIcon);
             commentsContainer.append(noComments);
 
-           
+
         },
 
         createProfilePictureElement: function(src, userId) {
@@ -1954,7 +1963,7 @@
         },
 
         createAttachmentTagElement: function(attachment, deletable) {
-            
+
             // Tag element
             var attachmentTag = $('<a/>', {
                 'class': 'tag attachment',
@@ -2320,6 +2329,9 @@
         },
 
         normalizeSpaces: function(inputText) {
+            if (inputText === undefined) {
+                return ''
+            }
             return inputText.replace(new RegExp('\u00a0', 'g'), ' ');   // Convert non-breaking spaces to reguar spaces
         },
 

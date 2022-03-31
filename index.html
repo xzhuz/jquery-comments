@@ -32,10 +32,21 @@
     <!-- Init jquery-comments -->
     <script type="text/javascript">
         $(function () {
+            var notZero = function (parentId) {
+                if (parentId === null) {
+                    return null
+                }
+                if (parentId === 0) {
+                    return null
+                }
+                return parentId;
+            };
+
+            // 映射字段
             var fieldMappings = function (data) {
                 return {
                     "id": data.id,
-                    "parent": data.parent === null ? notZero(data.parentId) : notZero(data.parent.id),
+                    "parent": notZero(data.parentId),
                     // "parent": null,
                     "created": data.createTime,
                     "modified": data.createTime,
@@ -49,38 +60,32 @@
                     "created_by_current_user": false,
                     "upvote_count": 0,
                     "user_has_upvoted": false,
-                    "is_new": false
+                    "is_new": false,
+                    "children": data.children,
                 }
-            }
-
-            var notZero = function (parentId) {
-                if (parentId === null) {
-                    return null
-                }
-                if (parentId === 0) {
-                    return null
-                }
-                return parentId;
             };
-            commentsArray = [];
-            usersArray = [];
-            $.ajax({
-                url: 'http://localhost:8090/api/content/posts/1/comments/list_view',
-                type: 'GET',
-                success: function (data, textStatus, xhr) {
-                    const {data: {content}} = data;
-                    content.forEach(c => {
-                        var comment = fieldMappings(c)
-                        usersArray.push({fullname: c.author, email: c.email})
-                        commentsArray.push(comment)
-                    })
 
-                },
-                error: function (xhr, textStatus, errorThrown) {
-                    commentsArray = []
+            // 解析内容
+            var parseContent = function (content) {
+                if (content === null || content === undefined) {
+                    return [];
                 }
-            });
+                if (content.children === null || content.children.length < 1) {
+                    return [fieldMappings(content)]
+                }
+                const comments = [];
+                var comment = fieldMappings(content)
+                comments.push(comment)
+                var childComments = []
+                for (let i = 0; i < comment.children.length; i++) {
+                    var childComment = parseContent(comment.children[i]);
+                    childComments.push(...childComment)
+                }
+                comments.push(...childComments)
+                return comments;
+            };
 
+            // 映射json
             var fieldMappingJSON = function (data) {
                 return {
                     "allowNotification": true,
@@ -92,7 +97,29 @@
                 };
             };
 
-            var doPostComment = function (data, success, error) {
+
+            usersArray = [];
+            var doGetComment = function (success, error) {
+                $.ajax({
+                    url: 'http://localhost:8090/api/content/posts/1/comments/tree_view',
+                    type: 'GET',
+                    success: function (data, textStatus, xhr) {
+                        const {data: {content}} = data;
+                        var commentsArray = [];
+                        content.forEach(c => {
+                            usersArray.push({fullname: c.author, email: c.email})
+                            commentsArray.push(...parseContent(c))
+                        })
+                        success(commentsArray)
+                    },
+                    error: function (xhr, textStatus, errorThrown) {
+                        commentsArray = []
+                    }
+                });
+            };
+
+
+            var doPostComment = function (data, success, error, audit) {
                 const jsonData = fieldMappingJSON(data)
                 $.ajax({
                     url: 'http://localhost:8090/api/content/posts/comments',
@@ -102,7 +129,11 @@
                     dataType: "json",
                     data: JSON.stringify(jsonData),
                     success: function (data, textStatus, xhr) {
-                        success(fieldMappings({parent: null, ...data.data}));
+                        const {status} = data.data
+                        // if ("AUDITING" === status) {
+                        //     audit();
+                        // }
+                        success(fieldMappings({parent: null, ...data.data}), "AUDITING" === status);
                     },
                     error: function (xhr, textStatus, errorThrown) {
                         error()
@@ -139,12 +170,12 @@
                 },
                 getComments: function (success, error) {
                     setTimeout(function () {
-                        success(commentsArray);
+                        doGetComment(success, error);
                     }, 500);
                 },
-                postComment: function (data, success, error) {
+                postComment: function (data, success, error, audit) {
                     setTimeout(function () {
-                        doPostComment(data, success, error);
+                        doPostComment(data, success, error, audit);
                     }, 500);
                 },
                 putComment: function (data, success, error) {
