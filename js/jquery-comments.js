@@ -208,8 +208,7 @@
                 timeFormatter: function(time) {return new Date(time).toLocaleDateString()}
             }
         },
-
-
+     
         // Initialization
         // ==============
 
@@ -281,6 +280,7 @@
             this.commentsById = {};
 
             this.$el.empty();
+            // 创建HTML
             this.createHTML();
 
             // Comments
@@ -342,7 +342,6 @@
         addCommentToDataModel: function(commentModel) {
             if(!(commentModel.id in this.commentsById)) {
                 this.commentsById[commentModel.id] = commentModel;
-
                 // Update child array of the parent (append childs to the array of outer most parent)
                 if(commentModel.parent) {
                     var outermostParent = this.getOutermostParent(commentModel.parent);
@@ -959,7 +958,6 @@
             };
 
             var error = function() {
-
                 // Reset button state
                 self.setButtonState(sendButton, true, false);
             };
@@ -976,9 +974,9 @@
             var prependComment = this.currentSortKey == 'newest';
             this.addComment(commentModel, commentList, prependComment);
 
-            if(this.currentSortKey == 'attachments' && commentModel.hasAttachments()) {
-                this.addAttachment(commentModel);
-            }
+            // if(this.currentSortKey == 'attachments' && commentModel.hasAttachments()) {
+            //     this.addAttachment(commentModel);
+            // }
         },
 
         putComment: function(ev) {
@@ -1287,62 +1285,7 @@
             noComments.prepend($('<br/>')).prepend(noCommentsIcon);
             commentsContainer.append(noComments);
 
-            // Attachments
-            if(this.options.enableAttachments) {
-
-                // Attachments container
-                var attachmentsContainer = $('<div/>', {
-                    'class': 'data-container',
-                    'data-container': 'attachments'
-                });
-                this.$el.append(attachmentsContainer);
-
-                // "No attachments" placeholder
-                var noAttachments = $('<div/>', {
-                    'class': 'no-attachments no-data',
-                    text: this.options.textFormatter(this.options.noAttachmentsText)
-                });
-                var noAttachmentsIcon = $('<i/>', {
-                    'class': 'fa fa-paperclip fa-2x'
-                });
-                if(this.options.attachmentIconURL.length) {
-                    noAttachmentsIcon.css('background-image', 'url("'+this.options.attachmentIconURL+'")');
-                    noAttachmentsIcon.addClass('image');
-                }
-                noAttachments.prepend($('<br/>')).prepend(noAttachmentsIcon);
-                attachmentsContainer.append(noAttachments);
-
-
-                // Drag & dropping attachments
-                var droppableOverlay = $('<div/>', {
-                    'class': 'droppable-overlay'
-                });
-
-                var droppableContainer = $('<div/>', {
-                    'class': 'droppable-container'
-                });
-
-                var droppable = $('<div/>', {
-                    'class': 'droppable'
-                });
-
-                var uploadIcon = $('<i/>', {
-                    'class': 'fa fa-paperclip fa-4x'
-                });
-                if(this.options.uploadIconURL.length) {
-                    uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
-                    uploadIcon.addClass('image');
-                }
-
-                var dropAttachmentText = $('<div/>', {
-                    text: this.options.textFormatter(this.options.attachmentDropText)
-                });
-                droppable.append(uploadIcon);
-                droppable.append(dropAttachmentText);
-
-                droppableOverlay.html(droppableContainer.html(droppable)).hide();
-                this.$el.append(droppableOverlay);
-            }
+           
         },
 
         createProfilePictureElement: function(src, userId) {
@@ -1440,51 +1383,51 @@
                 controlRow.append(deleteButton);
             }
 
-            if(this.options.enableAttachments) {
+            // if(this.options.enableAttachments) {
 
-                // Upload buttons
-                // ==============
+            //     // Upload buttons
+            //     // ==============
 
-                var uploadButton = $('<span/>', {
-                    'class': 'enabled upload'
-                });
-                var uploadIcon = $('<i/>', {
-                    'class': 'fa fa-paperclip'
-                });
-                var fileInput = $('<input/>', {
-                    'type': 'file',
-                    'multiple': 'multiple',
-                    'data-role': 'none' // Prevent jquery-mobile for adding classes
-                });
+            //     var uploadButton = $('<span/>', {
+            //         'class': 'enabled upload'
+            //     });
+            //     var uploadIcon = $('<i/>', {
+            //         'class': 'fa fa-paperclip'
+            //     });
+            //     var fileInput = $('<input/>', {
+            //         'type': 'file',
+            //         'multiple': 'multiple',
+            //         'data-role': 'none' // Prevent jquery-mobile for adding classes
+            //     });
 
-                if(this.options.uploadIconURL.length) {
-                    uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
-                    uploadIcon.addClass('image');
-                }
-                uploadButton.append(uploadIcon).append(fileInput);
+            //     if(this.options.uploadIconURL.length) {
+            //         uploadIcon.css('background-image', 'url("'+this.options.uploadIconURL+'")');
+            //         uploadIcon.addClass('image');
+            //     }
+            //     uploadButton.append(uploadIcon).append(fileInput);
 
-                // Main upload button
-                var mainUploadButton = uploadButton.clone();
-                mainUploadButton.data('original-content', mainUploadButton.children());
-                controlRow.append(mainUploadButton);
+            //     // Main upload button
+            //     var mainUploadButton = uploadButton.clone();
+            //     mainUploadButton.data('original-content', mainUploadButton.children());
+            //     controlRow.append(mainUploadButton);
 
-                // Inline upload button for main commenting field
-                if(isMain) {
-                    textareaWrapper.append(uploadButton.clone().addClass('inline-button'));
-                }
+            //     // Inline upload button for main commenting field
+            //     if(isMain) {
+            //         textareaWrapper.append(uploadButton.clone().addClass('inline-button'));
+            //     }
 
-                // Attachments container
-                // =====================
+            //     // Attachments container
+            //     // =====================
 
-                var attachmentsContainer = $('<div/>', {
-                    'class': 'attachments',
-                });
-                $(attachments).each(function(index, attachment) {
-                    var attachmentTag = self.createAttachmentTagElement(attachment, true);
-                    attachmentsContainer.append(attachmentTag);
-                });
-                controlRow.append(attachmentsContainer);
-            }
+            //     var attachmentsContainer = $('<div/>', {
+            //         'class': 'attachments',
+            //     });
+            //     $(attachments).each(function(index, attachment) {
+            //         var attachmentTag = self.createAttachmentTagElement(attachment, true);
+            //         attachmentsContainer.append(attachmentTag);
+            //     });
+            //     // controlRow.append(attachmentsContainer);
+            // }
 
 
             // Populate the element
@@ -1669,23 +1612,6 @@
                 'data-container-name': 'comments'
             });
 
-            // Attachments
-            var attachments = $('<li/>', {
-                text: this.options.textFormatter(this.options.attachmentsText),
-                'data-sort-key': 'attachments',
-                'data-container-name': 'attachments'
-            });
-
-            // Attachments icon
-            var attachmentsIcon = $('<i/>', {
-                'class': 'fa fa-paperclip'
-            });
-            if(this.options.attachmentIconURL.length) {
-                attachmentsIcon.css('background-image', 'url("'+this.options.attachmentIconURL+'")');
-                attachmentsIcon.addClass('image');
-            }
-            attachments.prepend(attachmentsIcon);
-
 
             // Responsive navigation
             var dropdownNavigationWrapper = $('<div/>', {
@@ -1713,10 +1639,7 @@
                 navigationWrapper.append(popular);
                 dropdownNavigation.append(popular.clone());
             }
-            if(this.options.enableAttachments) {
-                navigationWrapper.append(attachments);
-                dropdownNavigationWrapper.append(attachments.clone());
-            }
+
 
             if(this.options.forceResponsive) this.forceResponsive();
             return navigationEl;
@@ -1887,54 +1810,54 @@
             attachments.append(attachmentPreviews).append(attachmentTags);
 
             if(this.options.enableAttachments && commentModel.hasAttachments()) {
-                $(commentModel.attachments).each(function(index, attachment) {
-                    var format = undefined;
-                    var type = undefined;
+                // $(commentModel.attachments).each(function(index, attachment) {
+                //     var format = undefined;
+                //     var type = undefined;
 
-                    // Type and format
-                    if(attachment.mime_type) {
-                        var mimeTypeParts = attachment.mime_type.split('/');
-                        if(mimeTypeParts.length == 2) {
-                            format = mimeTypeParts[1];
-                            type = mimeTypeParts[0];
-                        }
-                    }
+                //     // Type and format
+                //     if(attachment.mime_type) {
+                //         var mimeTypeParts = attachment.mime_type.split('/');
+                //         if(mimeTypeParts.length == 2) {
+                //             format = mimeTypeParts[1];
+                //             type = mimeTypeParts[0];
+                //         }
+                //     }
 
-                    // Preview
-                    if(type == 'image' || type == 'video') {
-                        var previewRow = $('<div/>');
+                //     // Preview
+                //     if(type == 'image' || type == 'video') {
+                //         var previewRow = $('<div/>');
 
-                        // Preview element
-                        var preview = $('<a/>', {
-                            'class': 'preview',
-                            href: attachment.file,
-                            target: '_blank'
-                        });
-                        previewRow.html(preview);
+                //         // Preview element
+                //         var preview = $('<a/>', {
+                //             'class': 'preview',
+                //             href: attachment.file,
+                //             target: '_blank'
+                //         });
+                //         previewRow.html(preview);
 
-                        // Case: image preview
-                        if(type == 'image') {
-                            var image = $('<img/>', {
-                                src: attachment.file
-                            });
-                            preview.html(image);
+                //         // Case: image preview
+                //         if(type == 'image') {
+                //             var image = $('<img/>', {
+                //                 src: attachment.file
+                //             });
+                //             preview.html(image);
 
-                        // Case: video preview
-                        } else {
-                            var video = $('<video/>', {
-                                src: attachment.file,
-                                type: attachment.mime_type,
-                                controls: 'controls'
-                            });
-                            preview.html(video);
-                        }
-                        attachmentPreviews.append(previewRow);
-                    }
+                //         // Case: video preview
+                //         } else {
+                //             var video = $('<video/>', {
+                //                 src: attachment.file,
+                //                 type: attachment.mime_type,
+                //                 controls: 'controls'
+                //             });
+                //             preview.html(video);
+                //         }
+                //         attachmentPreviews.append(previewRow);
+                //     }
 
-                    // Tag element
-                    var attachmentTag = self.createAttachmentTagElement(attachment, false);
-                    attachmentTags.append(attachmentTag);
-                });
+                //     // Tag element
+                //     var attachmentTag = self.createAttachmentTagElement(attachment, false);
+                //     attachmentTags.append(attachmentTag);
+                // });
             }
 
 
