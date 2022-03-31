@@ -1,0 +1,40 @@
+.is-invisible {
+    display: none;
+}
+
+.pagination-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+ul li, ol li, ol, ul {
+    list-style: none;
+}
+
+.pagination-circle {
+    display: inline-block;
+    margin: 0 2px;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    line-height: 2rem;
+    color: #000;
+    text-align: center;
+}
+
+.pagination-circle:hover {
+    cursor: pointer;
+}
+
+.pagination-circle.is-current, .pagination-circle:hover {
+    background-color: #2196f3;
+    background-image: none;
+    color: #fff;
+}
+
+.pagination-circle:hover {
+    color: #fff;
+}
+
+

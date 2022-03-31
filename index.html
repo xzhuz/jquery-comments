@@ -8,6 +8,8 @@
 
     <!-- Styles -->
     <link rel="stylesheet" type="text/css" href="css/jquery-comments.css">
+    <link rel="stylesheet" type="text/css" href="css/pagination.css">
+    <link rel="stylesheet" type="text/css" href="css/modal.css">
     <link rel="stylesheet" type="text/css"
           href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
 
@@ -25,7 +27,7 @@
             padding: 20px;
             margin: 0px;
             font-size: 14px;
-            font-family: "Arial", Georgia, Serif;
+            /*font-f amily: "Arial", Georgia, Serif;*/
         }
     </style>
 
@@ -89,19 +91,27 @@
             var fieldMappingJSON = function (data) {
                 return {
                     "allowNotification": true,
-                    "author": "test",
+                    "author": data.author,
                     "content": data.content,
-                    "email": "test@mail.com",
+                    "authorUrl": data.authorUrl,
+                    "email": data.email,
                     "parentId": data.parent,
                     "postId": 1
                 };
             };
 
-
             usersArray = [];
             var doGetComment = function (success, error) {
+                getComment(0, success, error)
+            };
+
+            var pageGetComment = function (page, success, error) {
+                getComment(page, success, error)
+            };
+
+            var getComment = function (page, success, error) {
                 $.ajax({
-                    url: 'http://localhost:8090/api/content/posts/1/comments/tree_view',
+                    url: `http://localhost:8090/api/content/posts/1/comments/tree_view?page=${page}`,
                     type: 'GET',
                     success: function (data, textStatus, xhr) {
                         const {data: {content}} = data;
@@ -110,7 +120,7 @@
                             usersArray.push({fullname: c.author, email: c.email})
                             commentsArray.push(...parseContent(c))
                         })
-                        success(commentsArray)
+                        success({commentsArray, ...data.data})
                     },
                     error: function (xhr, textStatus, errorThrown) {
                         commentsArray = []
@@ -120,7 +130,16 @@
 
 
             var doPostComment = function (data, success, error, audit) {
-                const jsonData = fieldMappingJSON(data)
+                var author = localStorage.halo_author
+                var email = localStorage.halo_email;
+                var website = localStorage.halo_website;
+                if (!author || !email) {
+                    openModal()
+                    error()
+                    return
+                }
+
+                const jsonData = fieldMappingJSON({author, email, authorUrl: website, ...data});
                 $.ajax({
                     url: 'http://localhost:8090/api/content/posts/comments',
                     type: 'POST',
@@ -130,9 +149,9 @@
                     data: JSON.stringify(jsonData),
                     success: function (data, textStatus, xhr) {
                         const {status} = data.data
-                        // if ("AUDITING" === status) {
-                        //     audit();
-                        // }
+                        if ("AUDITING" === status) {
+                            audit('您的评论已经投递至博主，等待博主审核！');
+                        }
                         success(fieldMappings({parent: null, ...data.data}), "AUDITING" === status);
                     },
                     error: function (xhr, textStatus, errorThrown) {
@@ -141,21 +160,12 @@
                 });
             };
 
-            var saveComment = function (data) {
-                // Convert pings to human readable format
-                $(Object.keys(data.pings)).each(function (index, userId) {
-                    var fullname = data.pings[userId];
-                    var pingText = '@' + fullname;
-                    data.content = data.content.replace(new RegExp('@' + userId, 'g'), pingText);
-                });
-                return data;
-            }
             $('#comments-container').comments({
                 profilePictureURL: 'https://viima-app.s3.amazonaws.com/media/public/defaults/user-icon.png',
                 currentUserId: 1,
                 roundProfilePictures: true,
                 textareaRows: 1,
-                enableAttachments: true,
+                enableAttachments: false,
                 enableHashtags: true,
                 enablePinging: true,
                 scrollContainer: $(window),
@@ -168,6 +178,11 @@
                         }));
                     }, 500);
                 },
+                getPageComments: function (page, success, error) {
+                    setTimeout(function () {
+                        pageGetComment(page, success, error);
+                    }, 500);
+                },
                 getComments: function (success, error) {
                     setTimeout(function () {
                         doGetComment(success, error);
@@ -178,32 +193,97 @@
                         doPostComment(data, success, error, audit);
                     }, 500);
                 },
-                putComment: function (data, success, error) {
-                    setTimeout(function () {
-                        success(saveComment(data));
-                    }, 500);
-                },
-                deleteComment: function (data, success, error) {
-                    setTimeout(function () {
-                        success();
-                    }, 500);
-                },
-                upvoteComment: function (data, success, error) {
-                    setTimeout(function () {
-                        success(data);
-                    }, 500);
-                },
-                validateAttachments: function (attachments, callback) {
-                    setTimeout(function () {
-                        callback(attachments);
-                    }, 500);
-                },
+                // putComment: function (data, success, error) {
+                //     setTimeout(function () {
+                //         success(saveComment(data));
+                //     }, 500);
+                // },
+                // deleteComment: function (data, success, error) {
+                //     setTimeout(function () {
+                //         success();
+                //     }, 500);
+                // },
+                // upvoteComment: function (data, success, error) {
+                //     setTimeout(function () {
+                //         success(data);
+                //     }, 500);
+                // },
+                // validateAttachments: function (attachments, callback) {
+                //     setTimeout(function () {
+                //         callback(attachments);
+                //     }, 500);
+                // },
             });
         });
+
+        function openModal() {
+            modal = document.getElementById('modal')
+            modal.classList.remove('hidden')
+        }
+
+        function closeModal() {
+            modal = document.getElementById('modal')
+            modal.classList.add('hidden')
+        }
+
+        function confirm() {
+            var names = document.modal_form.names.value
+            var email = document.modal_form.email.value
+            var website = document.modal_form.website.value
+            localStorage.setItem('halo_author', names);
+            localStorage.setItem('halo_email', email);
+            localStorage.setItem('halo_website', website);
+            modal = document.getElementById('modal')
+            modal.classList.add('hidden')
+        }
+
     </script>
 
 </head>
 <body>
-<div id="comments-container"></div>
+
+<div id="comments-container">
+</div>
+<div id="modal" class="modal-wrapper hidden">
+    <div class="modal-container">
+        <!-- Modal header -->
+        <div class="modal-header ">
+            <h3>填写用户信息</h3>
+            <button onclick="closeModal()">x</button>
+        </div>
+        <!-- Modal body -->
+        <div class="modal-body">
+            <form name="modal_form" style="width: 100%">
+                <div class="">
+                    <label for="names" class="form-label">Username</label>
+                </div>
+                <div class="">
+                    <input type="text" id="names" autocomplete="off" name="names"
+                           class="form-text" placeholder="Username">
+                </div>
+                <div class="">
+                    <label for="email" class="form-label">Email</label>
+                </div>
+                <div class="">
+                    <input type="email" id="email" autocomplete="off" name="email"
+                           class="form-text" placeholder="Email">
+                </div>
+                <div class="">
+                    <label for="website" class="form-label">Website</label>
+                </div>
+                <div class="">
+                    <input type="url" id="website" autocomplete="off" name="website"
+                           class="form-text" placeholder="Website">
+                </div>
+            </form>
+        </div>
+
+        <!-- Modal footer -->
+        <div class="modal-footer">
+            <button class="modal-button  transition" onclick="confirm()">Confirm</button>
+            <button class="modal-button  transition" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+</div>
 </body>
 </html>
